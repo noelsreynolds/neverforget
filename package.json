@@ -1,0 +1,13 @@
+{
+  "name": "never-forget",
+  "private": true,
+  "scripts": {
+    "build": "cp -R public dist || true",
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "web-push": "^3.6.6"
+  },
+  "devDependencies": {}
+}

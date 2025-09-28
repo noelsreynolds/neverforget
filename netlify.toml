@@ -1,0 +1,19 @@
+[build]
+  publish = "public"
+  command = "npm run build"
+
+[dev]
+  publish = "public"
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["web-push", "@supabase/supabase-js"]
+
+# Run every minute
+[functions."cron-send-due-reminders"]
+  schedule = "* * * * *"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
