@@ -3,7 +3,7 @@
   command = "npm run build"
 
 [build.environment]
-  NODE_VERSION = "20"   # <- set Node here
+  NODE_VERSION = "20"   # Use Node 20 for functions/builds
 
 [dev]
   publish = "public"
@@ -12,14 +12,15 @@
   node_bundler = "esbuild"
   external_node_modules = ["web-push", "@supabase/supabase-js"]
 
-# Run every minute
+# Scheduled functions
 [functions."cron-send-due-reminders"]
-  schedule = "* * * * *"
+  schedule = "* * * * *"       # every minute
 
+[functions."keepalive"]
+  schedule = "0 9 * * *"       # daily at 09:00 UTC (~11:00 in Zurich now)
+
+# Friendly /api/* routes to functions
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
-
-[functions."cron-keepalive"]
-  schedule = "0 9 * * *"  # runs every day at 09:00 UTC
