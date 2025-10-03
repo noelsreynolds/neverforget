@@ -1,0 +1,28 @@
+name: Supabase Keepalive
+
+on:
+  schedule:
+    - cron: '0 9 * * *'   # runs daily at 09:00 UTC (~11:00 in Zurich now)
+  workflow_dispatch:       # lets you run it manually
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Upsert heartbeat row
+        run: |
+          TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          curl -sS -o /dev/null -w "HTTP %{http_code}\n" \
+            -X POST \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: resolution=merge-duplicates,return=representation" \
+            -d "{\"id\":1,\"touched_at\":\"${TS}\"}" \
+            "${SUPABASE_URL}/rest/v1/nf_heartbeat"
