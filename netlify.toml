@@ -8,6 +8,9 @@
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["web-push", "@supabase/supabase-js"]
+  node_bundler = "esbuild"
+  external_node_modules = ["web-push", "@supabase/supabase-js"]
+  node_version = "20"        # ← add this
 
 # Run every minute
 [functions."cron-send-due-reminders"]
