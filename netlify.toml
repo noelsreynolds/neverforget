@@ -2,13 +2,15 @@
   publish = "public"
   command = "npm run build"
 
+[build.environment]
+  NODE_VERSION = "20"   # <- set Node here
+
 [dev]
   publish = "public"
 
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["web-push", "@supabase/supabase-js"]
-  node_version = "20"
 
 # Run every minute
 [functions."cron-send-due-reminders"]
