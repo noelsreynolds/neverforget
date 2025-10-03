@@ -1,41 +1,40 @@
-import { createClient } from '@supabase/supabase-js';
-
 export async function handler() {
   try {
-    const missing = [];
-    if (!process.env.SUPABASE_URL) missing.push('SUPABASE_URL');
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY');
-    if (missing.length) {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
       return {
         statusCode: 500,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ok: false, error: 'Missing env vars', missing })
+        body: JSON.stringify({ ok: false, error: 'Missing env vars' })
       };
     }
 
-    const supa = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
-      { auth: { persistSession: false } }
-    );
+    // Upsert 1 row into nf_heartbeat using Supabase REST
+    const resp = await fetch(`${url}/rest/v1/nf_heartbeat`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${key}`,
+        'apikey': key,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=representation'
+      },
+      body: JSON.stringify({ id: 1, touched_at: new Date().toISOString() })
+    });
 
-    const { data, error } = await supa
-      .from('nf_heartbeat')
-      .upsert({ id: 1, touched_at: new Date().toISOString() }, { onConflict: 'id' })
-      .select();
-
-    if (error) {
+    const text = await resp.text(); // return whatever Supabase returns (JSON string)
+    if (!resp.ok) {
       return {
         statusCode: 500,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ok: false, error: error.message })
+        body: JSON.stringify({ ok: false, status: resp.status, body: text })
       };
     }
 
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ok: true, rows: data?.length || 0 })
+      body: text // should be a JSON array with the row
     };
   } catch (e) {
     return {
