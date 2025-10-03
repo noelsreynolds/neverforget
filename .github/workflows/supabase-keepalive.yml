@@ -15,19 +15,22 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
-     - name: Upsert heartbeat row
-  run: |
-    TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-    HTTP=$(curl -sS -o out.json -w "%{http_code}" \
-      -X POST \
-      -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
-      -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
-      -H "Content-Type: application/json" \
-      -H "Prefer: resolution=merge-duplicates,return=representation" \
-      -d "{\"id\":1,\"touched_at\":\"${TS}\"}" \
-      "${SUPABASE_URL}/rest/v1/nf_heartbeat")
-    echo "HTTP $HTTP"
-    echo "Response:"
-    cat out.json
-    # Fail the job if not 2xx
-    test "$HTTP" -ge 200 -a "$HTTP" -lt 300
+      - name: Upsert heartbeat row
+        run: |
+          set -e
+          TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          HTTP=$(curl -sS -o out.json -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: resolution=merge-duplicates,return=representation" \
+            -d "{\"id\":1,\"touched_at\":\"${TS}\"}" \
+            "${SUPABASE_URL}/rest/v1/nf_heartbeat")
+          echo "HTTP $HTTP"
+          echo "Response:"
+          cat out.json
+          # Fail the job if not 2xx
+          if [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ]; then
+            exit 1
+          fi
