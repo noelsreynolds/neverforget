@@ -2,7 +2,7 @@ name: Supabase Keepalive
 
 on:
   schedule:
-    - cron: '0 9 * * *'   # runs daily at 09:00 UTC (~11:00 in Zurich now)
+    - cron: '0 9 * * *'   # daily at 09:00 UTC (~11:00 Zurich now)
   workflow_dispatch:       # lets you run it manually
 
 permissions:
@@ -15,10 +15,29 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
-      - name: Upsert heartbeat row
+      - name: Heartbeat (PATCH, then POST upsert)
         run: |
           set -e
           TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          echo "---- Attempt PATCH (update existing row id=1) ----"
+          HTTP=$(curl -sS -o out.json -w "%{http_code}" \
+            -X PATCH \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=representation" \
+            -d "{\"touched_at\":\"${TS}\"}" \
+            "${SUPABASE_URL}/rest/v1/nf_heartbeat?id=eq.1")
+          echo "PATCH HTTP $HTTP"
+          echo "PATCH Response:"; cat out.json || true
+
+          # If PATCH succeeded (2xx), we’re done.
+          if [ "$HTTP" -ge 200 ] && [ "$HTTP" -lt 300 ]; then
+            exit 0
+          fi
+
+          echo "---- Attempt POST upsert (create/merge id=1) ----"
           HTTP=$(curl -sS -o out.json -w "%{http_code}" \
             -X POST \
             -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
@@ -26,11 +45,9 @@ jobs:
             -H "Content-Type: application/json" \
             -H "Prefer: resolution=merge-duplicates,return=representation" \
             -d "{\"id\":1,\"touched_at\":\"${TS}\"}" \
-            "${SUPABASE_URL}/rest/v1/nf_heartbeat")
-          echo "HTTP $HTTP"
-          echo "Response:"
-          cat out.json
-          # Fail the job if not 2xx
-          if [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ]; then
-            exit 1
-          fi
+            "${SUPABASE_URL}/rest/v1/nf_heartbeat?on_conflict=id")
+          echo "POST HTTP $HTTP"
+          echo "POST Response:"; cat out.json || true
+
+          # Fail the job if POST wasn't 2xx
+          test "$HTTP" -ge 200 -a "$HTTP" -lt 300
