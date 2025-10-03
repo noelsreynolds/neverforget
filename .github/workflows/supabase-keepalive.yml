@@ -2,8 +2,8 @@ name: Supabase Keepalive
 
 on:
   schedule:
-    - cron: '0 9 * * *'   # daily at 09:00 UTC (~11:00 Zurich now)
-  workflow_dispatch:       # lets you run it manually
+    - cron: '0 9 * * *'   # daily at 09:00 UTC (~11:00 in Zurich now)
+  workflow_dispatch:       # lets you run it manually from the Actions tab
 
 permissions:
   contents: read
@@ -25,6 +25,7 @@ jobs:
             -X PATCH \
             -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
             -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Accept-Profile: public" \
             -H "Content-Type: application/json" \
             -H "Prefer: return=representation" \
             -d "{\"touched_at\":\"${TS}\"}" \
@@ -42,6 +43,8 @@ jobs:
             -X POST \
             -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
             -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Accept-Profile: public" \
+            -H "Content-Profile: public" \
             -H "Content-Type: application/json" \
             -H "Prefer: resolution=merge-duplicates,return=representation" \
             -d "{\"id\":1,\"touched_at\":\"${TS}\"}" \
