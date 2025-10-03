@@ -16,9 +16,6 @@
 [functions."cron-send-due-reminders"]
   schedule = "* * * * *"       # every minute
 
-[functions."keepalive"]
-  schedule = "0 9 * * *"       # daily at 09:00 UTC (~11:00 in Zurich now)
-
 # Friendly /api/* routes to functions
 [[redirects]]
   from = "/api/*"
